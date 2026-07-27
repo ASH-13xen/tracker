@@ -1,65 +1,102 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState } from "react";
+import useSWR from "swr";
+import { toast } from "sonner";
+import { todayKey } from "@/lib/utils/date-helpers";
+import { apiPost } from "@/lib/utils/api-client";
+import { CountdownTimer } from "@/components/dashboard/countdown-timer";
+import { DateNav } from "@/components/dashboard/date-nav";
+import { ChecklistCard } from "@/components/dashboard/checklist-card";
+import { DailyNote } from "@/components/dashboard/daily-note";
+import { RevisionWidget } from "@/components/dashboard/revision-widget";
+import { RemindersWidget } from "@/components/dashboard/reminders-widget";
+import { HeatmapSection } from "@/components/dashboard/heatmap-section";
+import { Skeleton } from "@/components/ui/skeleton";
+
+export default function DashboardPage() {
+  const [date, setDate] = useState(todayKey());
+  const [pending, setPending] = useState(false);
+  const [pendingRevisionId, setPendingRevisionId] = useState(null);
+
+  const { data: dashboard, mutate } = useSWR(`/api/dashboard?date=${date}`);
+
+  async function handleToggle(activity, done) {
+    setPending(true);
+    try {
+      await apiPost("/api/dashboard/mark", { activity, done, date });
+      await mutate();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setPending(false);
+    }
+  }
+
+  async function handleSaveNote(note) {
+    try {
+      await apiPost("/api/dashboard/note", { date, note });
+      mutate((current) => (current ? { ...current, log: { ...current.log, note } } : current), {
+        revalidate: false,
+      });
+    } catch (err) {
+      toast.error(err.message);
+    }
+  }
+
+  async function handleMarkRevised(category, id) {
+    setPendingRevisionId(id);
+    try {
+      await apiPost("/api/revisions", { category, id, date });
+      await mutate();
+      toast.success("Marked as revised — due again in 7 days");
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setPendingRevisionId(null);
+    }
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.js file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight">Dashboard</h1>
+          <p className="text-sm text-muted-foreground">
+            Your daily checklist and progress at a glance.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <CountdownTimer />
+      </div>
+
+      <DateNav date={date} onChange={setDate} />
+
+      {!dashboard ? (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Skeleton className="h-64 w-full" />
+          <Skeleton className="h-64 w-full" />
         </div>
-      </main>
+      ) : (
+        <>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <ChecklistCard dashboard={dashboard} onToggle={handleToggle} pending={pending} />
+            <div className="space-y-6">
+              <DailyNote date={date} note={dashboard.log.note} onSave={handleSaveNote} />
+            </div>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            <RevisionWidget
+              items={dashboard.dueForRevision}
+              onMarkRevised={handleMarkRevised}
+              pendingId={pendingRevisionId}
+            />
+            <RemindersWidget events={dashboard.reminders} />
+          </div>
+
+          <HeatmapSection />
+        </>
+      )}
     </div>
   );
 }
