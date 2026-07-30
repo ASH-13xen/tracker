@@ -50,10 +50,18 @@ function Unit({ value, label }) {
 }
 
 export function CountdownTimer() {
-  const [remaining, setRemaining] = useState(getRemaining);
+  // Start null so server and first client render match exactly (both render
+  // the placeholder); the real Date.now()-based value only appears after
+  // mount, avoiding a hydration mismatch on the seconds digit.
+  const [remaining, setRemaining] = useState(null);
   const containerRef = useRef(null);
 
   useEffect(() => {
+    // Intentional: this is the client-only value that must NOT be computed
+    // during SSR, so setting it here (not during render) is what avoids the
+    // hydration mismatch rather than causing one.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setRemaining(getRemaining());
     const id = setInterval(() => setRemaining(getRemaining()), 1000);
     return () => clearInterval(id);
   }, []);
@@ -70,6 +78,8 @@ export function CountdownTimer() {
     { scope: containerRef }
   );
 
+  const r = remaining ?? { days: 0, hours: 0, minutes: 0, seconds: 0 };
+
   return (
     <div
       ref={containerRef}
@@ -79,13 +89,13 @@ export function CountdownTimer() {
         GATE 2027 countdown
       </p>
       <div className="mt-2 flex items-center gap-3 sm:gap-4">
-        <Unit value={remaining.days} label="days" />
+        <Unit value={r.days} label="days" />
         <span className="pb-4 text-xl text-muted-foreground">:</span>
-        <Unit value={remaining.hours} label="hrs" />
+        <Unit value={r.hours} label="hrs" />
         <span className="pb-4 text-xl text-muted-foreground">:</span>
-        <Unit value={remaining.minutes} label="min" />
+        <Unit value={r.minutes} label="min" />
         <span className="pb-4 text-xl text-muted-foreground">:</span>
-        <Unit value={remaining.seconds} label="sec" />
+        <Unit value={r.seconds} label="sec" />
       </div>
     </div>
   );

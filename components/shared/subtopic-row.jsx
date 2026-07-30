@@ -45,6 +45,7 @@ export function SubtopicRow({
   onRename,
   onDelete,
   showRevision = false,
+  showTheory = true,
 }) {
   const isDue =
     showRevision &&
@@ -56,13 +57,15 @@ export function SubtopicRow({
     <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/50 px-3 py-2">
       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
         <span className="min-w-[8rem] text-sm">{subtopic.name}</span>
-        <FlagCheckbox
-          label="Theory"
-          done={subtopic.theoryDone}
-          doneAt={subtopic.theoryDoneAt}
-          markedLater={subtopic.theoryMarkedLater}
-          onChange={(checked) => onMarkTheory(checked)}
-        />
+        {showTheory && (
+          <FlagCheckbox
+            label="Theory"
+            done={subtopic.theoryDone}
+            doneAt={subtopic.theoryDoneAt}
+            markedLater={subtopic.theoryMarkedLater}
+            onChange={(checked) => onMarkTheory(checked)}
+          />
+        )}
         <FlagCheckbox
           label="Practice"
           done={subtopic.practiceDone}

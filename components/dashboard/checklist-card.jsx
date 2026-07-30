@@ -87,7 +87,10 @@ export function ChecklistCard({ dashboard, onToggle, pending }) {
                     )}
                     {flag.doneAt && (
                       <span className="text-[11px] text-muted-foreground">
-                        {format(new Date(flag.doneAt), "h:mm a")}
+                        {format(
+                          new Date(flag.doneAt),
+                          flag.markedLater ? "d MMM, h:mm a" : "h:mm a"
+                        )}
                       </span>
                     )}
                   </div>

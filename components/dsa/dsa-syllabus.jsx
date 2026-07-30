@@ -68,9 +68,9 @@ export function DsaSyllabus({ date }) {
     }
   }
 
-  async function markField(subtopicId, field, done) {
+  async function markPractice(subtopicId, done) {
     try {
-      await apiPost(`/api/dsa/subtopics/${subtopicId}/mark`, { field, done, date });
+      await apiPost(`/api/dsa/subtopics/${subtopicId}/mark`, { done, date });
       await mutate();
     } catch (err) {
       toast.error(err.message);
@@ -170,8 +170,8 @@ export function DsaSyllabus({ date }) {
                     key={subtopic._id}
                     subtopic={subtopic}
                     showRevision
-                    onMarkTheory={(done) => markField(subtopic._id, "theory", done)}
-                    onMarkPractice={(done) => markField(subtopic._id, "practice", done)}
+                    showTheory={false}
+                    onMarkPractice={(done) => markPractice(subtopic._id, done)}
                     onMarkRevised={() => markRevised(subtopic._id)}
                     onRename={() =>
                       setNameDialog({
