@@ -1,31 +1,42 @@
 "use client";
 
 import { useState } from "react";
-import useSWR from "swr";
+import useSWR, { mutate as globalMutate } from "swr";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DateNav } from "@/components/dashboard/date-nav";
 import { FoodDayCard } from "@/components/food/food-day-card";
 import { FoodEntryFormDialog } from "@/components/food/food-entry-form-dialog";
+import { EditFoodEntryDialog } from "@/components/food/edit-food-entry-dialog";
+import { FoodItemsManager } from "@/components/food/food-items-manager";
 import { CalorieTrendChart } from "@/components/food/calorie-trend-chart";
 import { ConfirmDeleteDialog } from "@/components/shared/confirm-delete-dialog";
-import { apiPost, apiPatch, apiDelete } from "@/lib/utils/api-client";
+import { apiPatch, apiDelete } from "@/lib/utils/api-client";
 import { todayKey } from "@/lib/utils/date-helpers";
 
 export default function FoodPage() {
   const [date, setDate] = useState(todayKey());
   const { data: day, mutate } = useSWR(`/api/food?date=${date}`);
+  const { data: foodItems, mutate: mutateFoodItems } = useSWR("/api/food-items");
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [deleting, setDeleting] = useState(null);
 
-  async function handleSubmit(payload) {
+  function revalidateTrend() {
+    globalMutate((key) => typeof key === "string" && key.startsWith("/api/food?start="));
+  }
+
+  async function handleDayChanged() {
+    await mutate();
+    revalidateTrend();
+  }
+
+  async function handleEditSubmit(payload) {
     try {
-      if (editing) await apiPatch(`/api/food/${editing._id}`, payload);
-      else await apiPost("/api/food", { ...payload, date });
-      await mutate();
-      toast.success(editing ? "Entry updated" : "Entry added");
+      await apiPatch(`/api/food/${editing._id}`, payload);
+      await handleDayChanged();
+      toast.success("Entry updated");
     } catch (err) {
       toast.error(err.message);
     }
@@ -34,7 +45,7 @@ export default function FoodPage() {
   async function handleDeleteConfirm() {
     try {
       await apiDelete(`/api/food/${deleting._id}`);
-      await mutate();
+      await handleDayChanged();
       setDeleting(null);
     } catch (err) {
       toast.error(err.message);
@@ -57,17 +68,13 @@ export default function FoodPage() {
       ) : (
         <FoodDayCard
           day={day}
-          onAdd={() => {
-            setEditing(null);
-            setFormOpen(true);
-          }}
-          onEdit={(entry) => {
-            setEditing(entry);
-            setFormOpen(true);
-          }}
+          onAdd={() => setFormOpen(true)}
+          onEdit={(entry) => setEditing(entry)}
           onDelete={(entry) => setDeleting(entry)}
         />
       )}
+
+      <FoodItemsManager items={foodItems} mutate={mutateFoodItems} />
 
       <Card>
         <CardHeader>
@@ -81,8 +88,15 @@ export default function FoodPage() {
       <FoodEntryFormDialog
         open={formOpen}
         onOpenChange={setFormOpen}
+        date={date}
+        foodItems={foodItems || []}
+        onDone={handleDayChanged}
+      />
+      <EditFoodEntryDialog
+        open={!!editing}
+        onOpenChange={(open) => !open && setEditing(null)}
         entry={editing}
-        onSubmit={handleSubmit}
+        onSubmit={handleEditSubmit}
       />
       <ConfirmDeleteDialog
         open={!!deleting}
