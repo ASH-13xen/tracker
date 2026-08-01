@@ -81,7 +81,12 @@ export default function DashboardPage() {
           <div className="grid gap-6 lg:grid-cols-2">
             <ChecklistCard dashboard={dashboard} onToggle={handleToggle} pending={pending} />
             <div className="space-y-6">
-              <DailyNote date={date} note={dashboard.log.note} onSave={handleSaveNote} />
+              <DailyNote
+                date={date}
+                note={dashboard.log.note}
+                onSave={handleSaveNote}
+                isRecoveryDay={dashboard.dayType === "sunday"}
+              />
             </div>
           </div>
 

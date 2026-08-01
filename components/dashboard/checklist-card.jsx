@@ -11,11 +11,17 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 
 const ROWS = [
-  { key: "gate", label: "GATE Study", icon: GraduationCap, color: "gate" },
-  { key: "dsa", label: "DSA", icon: Binary, color: "dsa" },
-  { key: "exercise", label: "Exercise", icon: Dumbbell, color: "exercise", weekendOff: true },
-  { key: "skill", label: "Skill", icon: BrainCircuit, color: "skill" },
-  { key: "foodLogged", label: "Food Log", icon: UtensilsCrossed, color: "food" },
+  { key: "gate", label: "GATE Study", icon: GraduationCap, color: "gate", offOn: ["sunday"] },
+  { key: "dsa", label: "DSA", icon: Binary, color: "dsa", offOn: ["sunday"] },
+  {
+    key: "exercise",
+    label: "Exercise",
+    icon: Dumbbell,
+    color: "exercise",
+    offOn: ["saturday", "sunday"],
+  },
+  { key: "skill", label: "Skill", icon: BrainCircuit, color: "skill", offOn: ["sunday"] },
+  { key: "foodLogged", label: "Food Log", icon: UtensilsCrossed, color: "food", offOn: [] },
 ];
 
 export function ChecklistCard({ dashboard, onToggle, pending }) {
@@ -35,7 +41,7 @@ export function ChecklistCard({ dashboard, onToggle, pending }) {
   );
 
   if (!dashboard) return null;
-  const { log, schedule, isWeekend } = dashboard;
+  const { log, schedule, dayType } = dashboard;
 
   return (
     <Card>
@@ -47,8 +53,9 @@ export function ChecklistCard({ dashboard, onToggle, pending }) {
           {ROWS.map((row) => {
             const flag = log[row.key] || {};
             const Icon = row.icon;
-            const disabled = row.weekendOff && isWeekend;
+            const disabled = row.offOn.includes(dayType);
             const scheduleLabel = row.key === "foodLogged" ? "Log what you ate" : schedule[row.key];
+            const offLabel = dayType === "sunday" ? "Recovery day — free" : "Off today";
 
             return (
               <div
@@ -68,7 +75,7 @@ export function ChecklistCard({ dashboard, onToggle, pending }) {
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium leading-tight">{row.label}</p>
                   <p className="truncate text-xs text-muted-foreground">
-                    {disabled ? "Off today" : scheduleLabel}
+                    {disabled ? offLabel : scheduleLabel}
                   </p>
                 </div>
                 {flag.done && (

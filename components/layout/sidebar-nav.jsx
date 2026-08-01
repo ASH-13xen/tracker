@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   GraduationCap,
@@ -13,6 +13,7 @@ import {
   CalendarDays,
   FolderKanban,
   Download,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +31,13 @@ const NAV_ITEMS = [
 
 export function SidebarNav({ onNavigate }) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  async function handleLogout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.replace("/login");
+    router.refresh();
+  }
 
   return (
     <div className="flex h-full flex-col">
@@ -70,7 +78,7 @@ export function SidebarNav({ onNavigate }) {
         })}
       </nav>
 
-      <div className="px-3 pb-5">
+      <div className="space-y-1 px-3 pb-5">
         <a
           href="/api/export"
           className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
@@ -78,6 +86,14 @@ export function SidebarNav({ onNavigate }) {
           <Download className="h-4 w-4 shrink-0" />
           <span>Export data</span>
         </a>
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-medium text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
+        >
+          <LogOut className="h-4 w-4 shrink-0" />
+          <span>Log out</span>
+        </button>
       </div>
     </div>
   );

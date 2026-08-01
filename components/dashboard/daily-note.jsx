@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { NotebookPen, Check } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 
-export function DailyNote({ date, note, onSave }) {
+export function DailyNote({ date, note, onSave, isRecoveryDay }) {
   const [value, setValue] = useState(note || "");
   const [saved, setSaved] = useState(true);
   const [prevDate, setPrevDate] = useState(date);
@@ -38,6 +39,9 @@ export function DailyNote({ date, note, onSave }) {
         <CardTitle className="flex items-center gap-2 text-base">
           <NotebookPen className="h-4 w-4 text-muted-foreground" />
           Daily note
+          {isRecoveryDay && (
+            <Badge className="bg-project/20 text-project">Recovery day</Badge>
+          )}
         </CardTitle>
         <span className="flex items-center gap-1 text-xs text-muted-foreground">
           {saved ? (
@@ -53,7 +57,11 @@ export function DailyNote({ date, note, onSave }) {
         <Textarea
           value={value}
           onChange={handleChange}
-          placeholder="Anything worth remembering about today — why you skipped something, how a session went, etc."
+          placeholder={
+            isRecoveryDay
+              ? "Free day — jot down whatever unfinished work you tackled, or just relax."
+              : "Anything worth remembering about today — why you skipped something, how a session went, etc."
+          }
           className="min-h-24 resize-none"
         />
       </CardContent>
