@@ -3,15 +3,31 @@
 import { useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
-import { GraduationCap, Binary, Dumbbell, BrainCircuit, UtensilsCrossed } from "lucide-react";
+import {
+  GraduationCap,
+  Binary,
+  Dumbbell,
+  BrainCircuit,
+  UtensilsCrossed,
+} from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 
 const ROWS = [
-  { key: "gate", label: "GATE Study", icon: GraduationCap, color: "gate", offOn: ["sunday"] },
+  {
+    key: "gate",
+    label: "GATE Study",
+    icon: GraduationCap,
+    color: "gate",
+    offOn: ["sunday"],
+  },
   { key: "dsa", label: "DSA", icon: Binary, color: "dsa", offOn: ["sunday"] },
   {
     key: "exercise",
@@ -20,8 +36,20 @@ const ROWS = [
     color: "exercise",
     offOn: ["saturday", "sunday"],
   },
-  { key: "skill", label: "Skill", icon: BrainCircuit, color: "skill", offOn: ["sunday"] },
-  { key: "foodLogged", label: "Food Log", icon: UtensilsCrossed, color: "food", offOn: [] },
+  {
+    key: "skill",
+    label: "Skill",
+    icon: BrainCircuit,
+    color: "skill",
+    offOn: ["sunday"],
+  },
+  {
+    key: "foodLogged",
+    label: "Food Log",
+    icon: UtensilsCrossed,
+    color: "food",
+    offOn: [],
+  },
 ];
 
 export function ChecklistCard({ dashboard, onToggle, pending }) {
@@ -37,7 +65,7 @@ export function ChecklistCard({ dashboard, onToggle, pending }) {
         ease: "power2.out",
       });
     },
-    { dependencies: [dashboard?.date], scope: listRef }
+    { dependencies: [dashboard?.date], scope: listRef },
   );
 
   if (!dashboard) return null;
@@ -54,8 +82,10 @@ export function ChecklistCard({ dashboard, onToggle, pending }) {
             const flag = log[row.key] || {};
             const Icon = row.icon;
             const disabled = row.offOn.includes(dayType);
-            const scheduleLabel = row.key === "foodLogged" ? "Log what you ate" : schedule[row.key];
-            const offLabel = dayType === "sunday" ? "Recovery day — free" : "Off today";
+            const scheduleLabel =
+              row.key === "foodLogged" ? "Log what you ate" : schedule[row.key];
+            const offLabel =
+              dayType === "sunday" ? "Recovery day — free" : "30min";
 
             return (
               <div
@@ -65,7 +95,9 @@ export function ChecklistCard({ dashboard, onToggle, pending }) {
                 <Checkbox
                   checked={!!flag.done}
                   disabled={disabled || pending}
-                  onCheckedChange={(checked) => onToggle(row.key, checked === true)}
+                  onCheckedChange={(checked) =>
+                    onToggle(row.key, checked === true)
+                  }
                   className="h-5 w-5"
                 />
                 <Icon
@@ -73,7 +105,9 @@ export function ChecklistCard({ dashboard, onToggle, pending }) {
                   style={{ color: `var(--${row.color})` }}
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium leading-tight">{row.label}</p>
+                  <p className="text-sm font-medium leading-tight">
+                    {row.label}
+                  </p>
                   <p className="truncate text-xs text-muted-foreground">
                     {disabled ? offLabel : scheduleLabel}
                   </p>
@@ -96,7 +130,7 @@ export function ChecklistCard({ dashboard, onToggle, pending }) {
                       <span className="text-[11px] text-muted-foreground">
                         {format(
                           new Date(flag.doneAt),
-                          flag.markedLater ? "d MMM, h:mm a" : "h:mm a"
+                          flag.markedLater ? "d MMM, h:mm a" : "h:mm a",
                         )}
                       </span>
                     )}
