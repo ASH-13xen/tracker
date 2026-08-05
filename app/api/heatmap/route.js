@@ -6,7 +6,10 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const category = searchParams.get("category") || "overall";
     const days = Number(searchParams.get("days") || 365);
-    const data = await heatmapService.getHeatmap(category, days);
+    const data =
+      category === "overall"
+        ? await heatmapService.getOverallHeatmap(days)
+        : await heatmapService.getHeatmap(category, days);
     return ok(data);
   } catch (err) {
     return fail(err, 500);

@@ -9,6 +9,7 @@ import {
   Dumbbell,
   BrainCircuit,
   UtensilsCrossed,
+  Sparkles,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,35 +22,11 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 
 const ROWS = [
-  {
-    key: "gate",
-    label: "GATE Study",
-    icon: GraduationCap,
-    color: "gate",
-    offOn: ["sunday"],
-  },
-  { key: "dsa", label: "DSA", icon: Binary, color: "dsa", offOn: ["sunday"] },
-  {
-    key: "exercise",
-    label: "Exercise",
-    icon: Dumbbell,
-    color: "exercise",
-    offOn: ["saturday", "sunday"],
-  },
-  {
-    key: "skill",
-    label: "Skill",
-    icon: BrainCircuit,
-    color: "skill",
-    offOn: ["sunday"],
-  },
-  {
-    key: "foodLogged",
-    label: "Food Log",
-    icon: UtensilsCrossed,
-    color: "food",
-    offOn: [],
-  },
+  { key: "gate", label: "GATE Study", icon: GraduationCap, color: "gate" },
+  { key: "dsa", label: "DSA", icon: Binary, color: "dsa" },
+  { key: "exercise", label: "Exercise", icon: Dumbbell, color: "exercise" },
+  { key: "skill", label: "Skill", icon: BrainCircuit, color: "skill" },
+  { key: "foodLogged", label: "Food Log", icon: UtensilsCrossed, color: "food" },
 ];
 
 export function ChecklistCard({ dashboard, onToggle, pending }) {
@@ -57,6 +34,7 @@ export function ChecklistCard({ dashboard, onToggle, pending }) {
 
   useGSAP(
     () => {
+      if (!listRef.current) return;
       gsap.from(listRef.current.children, {
         opacity: 0,
         x: -8,
@@ -65,11 +43,12 @@ export function ChecklistCard({ dashboard, onToggle, pending }) {
         ease: "power2.out",
       });
     },
-    { dependencies: [dashboard?.date], scope: listRef },
+    { dependencies: [dashboard?.date, dashboard?.dayType], scope: listRef },
   );
 
   if (!dashboard) return null;
   const { log, schedule, dayType } = dashboard;
+  const rows = dayType === "sunday" ? [] : ROWS;
 
   return (
     <Card>
@@ -77,15 +56,21 @@ export function ChecklistCard({ dashboard, onToggle, pending }) {
         <CardTitle className="text-base">Today&apos;s checklist</CardTitle>
       </CardHeader>
       <CardContent>
-        <div ref={listRef} className="space-y-1">
-          {ROWS.map((row) => {
+        <div ref={listRef} className={rows.length === 0 ? "" : "space-y-1"}>
+        {rows.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 py-8 text-center">
+            <Sparkles className="h-5 w-5 text-project" />
+            <p className="text-sm font-medium">Recovery day — nothing to check off.</p>
+            <p className="text-xs text-muted-foreground">
+              Free day. Use the note to plan or wrap up unfinished work.
+            </p>
+          </div>
+        ) : (
+          rows.map((row) => {
             const flag = log[row.key] || {};
             const Icon = row.icon;
-            const disabled = row.offOn.includes(dayType);
             const scheduleLabel =
               row.key === "foodLogged" ? "Log what you ate" : schedule[row.key];
-            const offLabel =
-              dayType === "sunday" ? "Recovery day — free" : "30min";
 
             return (
               <div
@@ -94,7 +79,7 @@ export function ChecklistCard({ dashboard, onToggle, pending }) {
               >
                 <Checkbox
                   checked={!!flag.done}
-                  disabled={disabled || pending}
+                  disabled={pending}
                   onCheckedChange={(checked) =>
                     onToggle(row.key, checked === true)
                   }
@@ -109,7 +94,7 @@ export function ChecklistCard({ dashboard, onToggle, pending }) {
                     {row.label}
                   </p>
                   <p className="truncate text-xs text-muted-foreground">
-                    {disabled ? offLabel : scheduleLabel}
+                    {scheduleLabel}
                   </p>
                 </div>
                 {flag.done && (
@@ -138,7 +123,8 @@ export function ChecklistCard({ dashboard, onToggle, pending }) {
                 )}
               </div>
             );
-          })}
+          })
+        )}
         </div>
       </CardContent>
     </Card>

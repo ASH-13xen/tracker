@@ -11,16 +11,12 @@ const CELL = 11;
 const GAP = 3;
 
 function bucketFor(count) {
-  if (!count) return 0;
-  if (count === 1) return 1;
-  if (count === 2) return 2;
-  if (count <= 4) return 3;
-  return 4;
+  return Math.max(0, Math.min(count, 4));
 }
 
 const LEVEL_MIX = [0, 25, 50, 75, 100];
 
-function buildWeeks(counts, days) {
+function buildWeeks(byDate, days) {
   const end = new Date();
   const start = new Date();
   start.setDate(start.getDate() - (days - 1));
@@ -33,9 +29,11 @@ function buildWeeks(counts, days) {
   while (cursor <= end) {
     const key = toDateKey(cursor);
     const inRange = cursor >= start;
+    const entry = byDate.get(key);
     cells.push({
       date: key,
-      count: inRange ? counts.get(key) || 0 : null,
+      count: inRange ? entry?.count || 0 : null,
+      unmarkable: inRange ? !!entry?.unmarkable : false,
       weekday: cursor.getDay(),
     });
     cursor.setDate(cursor.getDate() + 1);
@@ -50,14 +48,14 @@ function buildWeeks(counts, days) {
 
 export function HeatmapGrid({ data, color, label, days = 365 }) {
   const gridRef = useRef(null);
-  const counts = useMemo(() => new Map(data.map((d) => [d.date, d.count])), [data]);
-  const weeks = useMemo(() => buildWeeks(counts, days), [counts, days]);
+  const byDate = useMemo(() => new Map(data.map((d) => [d.date, d])), [data]);
+  const weeks = useMemo(() => buildWeeks(byDate, days), [byDate, days]);
 
   const monthLabels = useMemo(() => {
     const labels = [];
     let lastMonth = null;
     weeks.forEach((week, i) => {
-      const firstValid = week.find((c) => c.count !== null);
+      const firstValid = week.find((c) => c.count !== null || c.unmarkable);
       if (!firstValid) return;
       const month = parseISO(firstValid.date).getMonth();
       if (month !== lastMonth) {
@@ -98,6 +96,16 @@ export function HeatmapGrid({ data, color, label, days = 365 }) {
             />
           ))}
           <span>More</span>
+          <span
+            className="ml-2 inline-block rounded-[2px]"
+            style={{
+              width: CELL,
+              height: CELL,
+              backgroundImage:
+                "repeating-linear-gradient(45deg, var(--border) 0, var(--border) 1px, transparent 1px, transparent 4px)",
+            }}
+          />
+          <span>Recovery day</span>
         </div>
       </div>
 
@@ -122,9 +130,33 @@ export function HeatmapGrid({ data, color, label, days = 365 }) {
             {weeks.map((week, wi) => (
               <div key={wi} className="flex flex-col gap-[3px]">
                 {week.map((cell, di) => {
-                  if (cell.count === null) {
+                  if (cell.count === null && !cell.unmarkable) {
                     return (
                       <div key={di} style={{ width: CELL, height: CELL }} />
+                    );
+                  }
+                  if (cell.unmarkable) {
+                    return (
+                      <Tooltip key={di}>
+                        <TooltipTrigger
+                          render={
+                            <div
+                              tabIndex={0}
+                              className="rounded-xs outline-none transition-transform hover:scale-125 focus-visible:scale-125"
+                              style={{
+                                width: CELL,
+                                height: CELL,
+                                backgroundColor: "var(--muted)",
+                                backgroundImage:
+                                  "repeating-linear-gradient(45deg, var(--border) 0, var(--border) 1px, transparent 1px, transparent 4px)",
+                              }}
+                            />
+                          }
+                        />
+                        <TooltipContent>
+                          Recovery day — not tracked · {format(parseISO(cell.date), "d MMM yyyy")}
+                        </TooltipContent>
+                      </Tooltip>
                     );
                   }
                   const level = bucketFor(cell.count);
