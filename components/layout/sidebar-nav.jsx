@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   GraduationCap,
+  Landmark,
   Binary,
   BrainCircuit,
   Dumbbell,
@@ -20,6 +21,7 @@ import { cn } from "@/lib/utils";
 const NAV_ITEMS = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard, color: null },
   { href: "/gate", label: "GATE", icon: GraduationCap, color: "var(--gate)" },
+  { href: "/sebi", label: "SEBI", icon: Landmark, color: null },
   { href: "/dsa", label: "DSA", icon: Binary, color: "var(--dsa)" },
   { href: "/skills", label: "Skills", icon: BrainCircuit, color: "var(--skill)" },
   { href: "/exercise", label: "Exercise", icon: Dumbbell, color: "var(--exercise)" },
